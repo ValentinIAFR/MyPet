@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Animal Planner</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+<h1>Animal Planner</h1>
+</header>
+
+<section class="profil">
+<h2>Profil de l'animal</h2>
+
+<label>Nom</label>
+<input id="nom" type="text">
+
+<label>Date de naissance</label>
+<input id="naissance" type="date">
+
+<label>Espèce</label>
+<input id="espece" type="text">
+
+<button onclick="saveProfil()">Sauvegarder</button>
+</section>
+
+
+<section class="calendar">
+<h2>Planning</h2>
+
+<div class="add-event">
+
+<input id="titre" placeholder="Titre de l'événement">
+
+<input id="date" type="date">
+
+<input id="heure" type="time">
+
+<select id="recurrence">
+<option value="none">Pas de récurrence</option>
+<option value="weekly">Toutes les semaines</option>
+</select>
+
+<select id="jour">
+<option value="1">Lundi</option>
+<option value="2">Mardi</option>
+<option value="3">Mercredi</option>
+<option value="4">Jeudi</option>
+<option value="5">Vendredi</option>
+<option value="6">Samedi</option>
+<option value="0">Dimanche</option>
+</select>
+
+<button onclick="addEvent()">Ajouter</button>
+
+</div>
+
+<ul id="events"></ul>
+
+</section>
+
+
+<script>
+
+let events = JSON.parse(localStorage.getItem("events")) || [];
+
+function saveProfil(){
+
+let profil = {
+nom: document.getElementById("nom").value,
+naissance: document.getElementById("naissance").value,
+espece: document.getElementById("espece").value
+}
+
+localStorage.setItem("profil", JSON.stringify(profil));
+
+alert("Profil sauvegardé");
+
+}
+
+function loadProfil(){
+
+let profil = JSON.parse(localStorage.getItem("profil"));
+
+if(!profil) return;
+
+document.getElementById("nom").value = profil.nom;
+document.getElementById("naissance").value = profil.naissance;
+document.getElementById("espece").value = profil.espece;
+
+}
+
+function addEvent(){
+
+let event = {
+titre: document.getElementById("titre").value,
+date: document.getElementById("date").value,
+heure: document.getElementById("heure").value,
+recurrence: document.getElementById("recurrence").value,
+jour: document.getElementById("jour").value
+}
+
+events.push(event);
+
+localStorage.setItem("events", JSON.stringify(events));
+
+displayEvents();
+
+}
+
+function displayEvents(){
+
+let list = document.getElementById("events");
+
+list.innerHTML = "";
+
+events.forEach(e => {
+
+let li = document.createElement("li");
+
+li.innerHTML = `
+<strong>${e.titre}</strong><br>
+${e.date} à ${e.heure}
+`;
+
+list.appendChild(li);
+
+});
+
+}
+
+function checkNotifications(){
+
+if(Notification.permission !== "granted"){
+Notification.requestPermission();
+}
+
+setInterval(()=>{
+
+let now = new Date();
+
+events.forEach(e=>{
+
+let eventDate = new Date(e.date + "T" + e.heure);
+
+if(
+now.getFullYear() === eventDate.getFullYear() &&
+now.getMonth() === eventDate.getMonth() &&
+now.getDate() === eventDate.getDate() &&
+now.getHours() === eventDate.getHours() &&
+now.getMinutes() === eventDate.getMinutes()
+){
+
+new Notification("Rappel",{
+body: e.titre
+});
+
+}
+
+});
+
+},60000);
+
+}
+
+loadProfil();
+displayEvents();
+checkNotifications();
+
+</script>
+
+</body>
+</html>
