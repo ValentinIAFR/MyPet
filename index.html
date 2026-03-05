@@ -1,174 +1,285 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+
 <meta charset="UTF-8">
-<title>Animal Planner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Pet Planner</title>
+
 <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
 
-<header>
-<h1>Animal Planner</h1>
-</header>
+<div id="setup">
 
-<section class="profil">
-<h2>Profil de l'animal</h2>
+<h2>Configure ton animal</h2>
 
-<label>Nom</label>
-<input id="nom" type="text">
+<input id="petName" placeholder="Nom de l'animal">
 
-<label>Date de naissance</label>
-<input id="naissance" type="date">
+<input id="petBirth" type="date">
 
-<label>Espèce</label>
-<input id="espece" type="text">
+<input id="petType" placeholder="Espèce">
 
-<button onclick="saveProfil()">Sauvegarder</button>
-</section>
+<input id="petPhoto" type="file">
 
-
-<section class="calendar">
-<h2>Planning</h2>
-
-<div class="add-event">
-
-<input id="titre" placeholder="Titre de l'événement">
-
-<input id="date" type="date">
-
-<input id="heure" type="time">
-
-<select id="recurrence">
-<option value="none">Pas de récurrence</option>
-<option value="weekly">Toutes les semaines</option>
-</select>
-
-<select id="jour">
-<option value="1">Lundi</option>
-<option value="2">Mardi</option>
-<option value="3">Mercredi</option>
-<option value="4">Jeudi</option>
-<option value="5">Vendredi</option>
-<option value="6">Samedi</option>
-<option value="0">Dimanche</option>
-</select>
-
-<button onclick="addEvent()">Ajouter</button>
+<button onclick="savePet()">Commencer</button>
 
 </div>
 
-<ul id="events"></ul>
 
-</section>
+<div id="app">
+
+<header>
+
+<h1 id="petTitle"></h1>
+
+<img id="profilePic" onclick="openProfile()">
+
+</header>
+
+
+<div class="calendarHeader">
+
+<button onclick="changeMonth(-1)">‹</button>
+
+<h2 id="monthTitle"></h2>
+
+<button onclick="changeMonth(1)">›</button>
+
+</div>
+
+
+<div id="calendar"></div>
+
+
+<div class="addEvent">
+
+<input id="eventTitle" placeholder="Titre">
+
+<input id="eventDate" type="date">
+
+<input id="eventTime" type="time">
+
+<button onclick="addEvent()">Ajouter événement</button>
+
+</div>
+
+
+<div id="profileModal">
+
+<h2>Profil</h2>
+
+<input id="editName">
+
+<input id="editBirth" type="date">
+
+<input id="editType">
+
+<input id="editPhoto" type="file">
+
+<button onclick="updateProfile()">Sauvegarder</button>
+
+<button onclick="closeProfile()">Fermer</button>
+
+</div>
+
+</div>
 
 
 <script>
 
-let events = JSON.parse(localStorage.getItem("events")) || [];
+let events = JSON.parse(localStorage.getItem("events")) || []
 
-function saveProfil(){
+let currentDate = new Date()
 
-let profil = {
-nom: document.getElementById("nom").value,
-naissance: document.getElementById("naissance").value,
-espece: document.getElementById("espece").value
+function savePet(){
+
+let file = document.getElementById("petPhoto").files[0]
+
+let reader = new FileReader()
+
+reader.onload = function(){
+
+let pet = {
+
+name: document.getElementById("petName").value,
+birth: document.getElementById("petBirth").value,
+type: document.getElementById("petType").value,
+photo: reader.result
+
 }
 
-localStorage.setItem("profil", JSON.stringify(profil));
+localStorage.setItem("pet", JSON.stringify(pet))
 
-alert("Profil sauvegardé");
+location.reload()
 
 }
 
-function loadProfil(){
+if(file) reader.readAsDataURL(file)
 
-let profil = JSON.parse(localStorage.getItem("profil"));
+}
 
-if(!profil) return;
+function loadPet(){
 
-document.getElementById("nom").value = profil.nom;
-document.getElementById("naissance").value = profil.naissance;
-document.getElementById("espece").value = profil.espece;
+let pet = JSON.parse(localStorage.getItem("pet"))
+
+if(!pet){
+
+document.getElementById("setup").style.display="flex"
+document.getElementById("app").style.display="none"
+
+return
+
+}
+
+document.getElementById("setup").style.display="none"
+document.getElementById("app").style.display="block"
+
+document.getElementById("petTitle").innerText = pet.name
+document.getElementById("profilePic").src = pet.photo
+
+}
+
+function openProfile(){
+
+let pet = JSON.parse(localStorage.getItem("pet"))
+
+document.getElementById("profileModal").style.display="flex"
+
+document.getElementById("editName").value = pet.name
+document.getElementById("editBirth").value = pet.birth
+document.getElementById("editType").value = pet.type
+
+}
+
+function closeProfile(){
+
+document.getElementById("profileModal").style.display="none"
+
+}
+
+function updateProfile(){
+
+let pet = JSON.parse(localStorage.getItem("pet"))
+
+pet.name = document.getElementById("editName").value
+pet.birth = document.getElementById("editBirth").value
+pet.type = document.getElementById("editType").value
+
+let file = document.getElementById("editPhoto").files[0]
+
+if(file){
+
+let reader = new FileReader()
+
+reader.onload = function(){
+
+pet.photo = reader.result
+
+localStorage.setItem("pet", JSON.stringify(pet))
+
+location.reload()
+
+}
+
+reader.readAsDataURL(file)
+
+}else{
+
+localStorage.setItem("pet", JSON.stringify(pet))
+
+location.reload()
+
+}
+
+}
+
+function generateCalendar(){
+
+let calendar = document.getElementById("calendar")
+
+calendar.innerHTML=""
+
+let year = currentDate.getFullYear()
+let month = currentDate.getMonth()
+
+let firstDay = new Date(year,month,1).getDay()
+let daysInMonth = new Date(year,month+1,0).getDate()
+
+document.getElementById("monthTitle").innerText =
+currentDate.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})
+
+for(let i=0;i<firstDay;i++){
+
+let empty = document.createElement("div")
+
+calendar.appendChild(empty)
+
+}
+
+for(let d=1; d<=daysInMonth; d++){
+
+let day = document.createElement("div")
+
+day.className="day"
+
+let dateStr =
+year+"-"+String(month+1).padStart(2,"0")+"-"+String(d).padStart(2,"0")
+
+day.innerHTML="<span>"+d+"</span>"
+
+events
+.filter(e=>e.date===dateStr)
+.forEach(e=>{
+
+let ev = document.createElement("div")
+
+ev.className="event"
+
+ev.innerText=e.time+" "+e.title
+
+day.appendChild(ev)
+
+})
+
+calendar.appendChild(day)
+
+}
+
+}
+
+function changeMonth(n){
+
+currentDate.setMonth(currentDate.getMonth()+n)
+
+generateCalendar()
 
 }
 
 function addEvent(){
 
-let event = {
-titre: document.getElementById("titre").value,
-date: document.getElementById("date").value,
-heure: document.getElementById("heure").value,
-recurrence: document.getElementById("recurrence").value,
-jour: document.getElementById("jour").value
-}
+let event={
 
-events.push(event);
-
-localStorage.setItem("events", JSON.stringify(events));
-
-displayEvents();
+title:document.getElementById("eventTitle").value,
+date:document.getElementById("eventDate").value,
+time:document.getElementById("eventTime").value
 
 }
 
-function displayEvents(){
+events.push(event)
 
-let list = document.getElementById("events");
+localStorage.setItem("events",JSON.stringify(events))
 
-list.innerHTML = "";
-
-events.forEach(e => {
-
-let li = document.createElement("li");
-
-li.innerHTML = `
-<strong>${e.titre}</strong><br>
-${e.date} à ${e.heure}
-`;
-
-list.appendChild(li);
-
-});
+generateCalendar()
 
 }
 
-function checkNotifications(){
+loadPet()
 
-if(Notification.permission !== "granted"){
-Notification.requestPermission();
-}
-
-setInterval(()=>{
-
-let now = new Date();
-
-events.forEach(e=>{
-
-let eventDate = new Date(e.date + "T" + e.heure);
-
-if(
-now.getFullYear() === eventDate.getFullYear() &&
-now.getMonth() === eventDate.getMonth() &&
-now.getDate() === eventDate.getDate() &&
-now.getHours() === eventDate.getHours() &&
-now.getMinutes() === eventDate.getMinutes()
-){
-
-new Notification("Rappel",{
-body: e.titre
-});
-
-}
-
-});
-
-},60000);
-
-}
-
-loadProfil();
-displayEvents();
-checkNotifications();
+generateCalendar()
 
 </script>
 
