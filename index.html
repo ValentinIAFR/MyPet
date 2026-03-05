@@ -37,7 +37,13 @@
 
 <h1 id="petTitle"></h1>
 
+<div class="profileBox">
+
 <img id="profilePic" onclick="openProfile()">
+
+<button id="addButton" onclick="toggleEventForm()">+</button>
+
+</div>
 
 </header>
 
@@ -56,9 +62,9 @@
 <div id="calendar"></div>
 
 
-<div class="eventCreator">
+<div id="eventCreator">
 
-<input id="eventTitle" placeholder="Titre de l'évènement">
+<input id="eventTitle" placeholder="Titre">
 
 <input id="eventDate" type="date">
 
@@ -98,13 +104,11 @@
 <script>
 
 let events = JSON.parse(localStorage.getItem("events")) || []
-
 let currentDate = new Date()
 
 function savePet(){
 
-let file = document.getElementById("petPhoto").files[0]
-
+let file = petPhoto.files[0]
 let reader = new FileReader()
 
 reader.onload = function(){
@@ -118,8 +122,7 @@ photo: reader.result
 
 }
 
-localStorage.setItem("pet",JSON.stringify(pet))
-
+localStorage.setItem("pet", JSON.stringify(pet))
 location.reload()
 
 }
@@ -174,31 +177,52 @@ pet.name=editName.value
 pet.birth=editBirth.value
 pet.type=editType.value
 
-let file=editPhoto.files[0]
-
-if(file){
-
-let reader=new FileReader()
-
-reader.onload=function(){
-
-pet.photo=reader.result
-
-localStorage.setItem("pet",JSON.stringify(pet))
-
+localStorage.setItem("pet", JSON.stringify(pet))
 location.reload()
 
 }
 
-reader.readAsDataURL(file)
+function toggleEventForm(){
+
+let form = document.getElementById("eventCreator")
+
+if(form.style.display==="flex"){
+
+form.style.display="none"
 
 }else{
 
-localStorage.setItem("pet",JSON.stringify(pet))
-
-location.reload()
+form.style.display="flex"
 
 }
+
+}
+
+function addEvent(){
+
+let title=eventTitle.value
+let date=eventDate.value
+let time=eventTime.value
+let repeat=eventRepeat.value
+
+let exists = events.find(e=> e.date===date && e.time===time)
+
+if(exists){
+
+alert("Un évènement est déjà programmé le "+date+" à "+time)
+return
+
+}
+
+let event={title,date,time,repeat}
+
+events.push(event)
+
+localStorage.setItem("events",JSON.stringify(events))
+
+generateCalendar()
+
+eventCreator.style.display="none"
 
 }
 
@@ -216,12 +240,11 @@ monthTitle.innerText=currentDate.toLocaleDateString("fr-FR",{month:"long",year:"
 
 for(let i=0;i<firstDay;i++){
 
-let empty=document.createElement("div")
-calendar.appendChild(empty)
+calendar.appendChild(document.createElement("div"))
 
 }
 
-for(let d=1;d<=daysInMonth;d++){
+for(let d=1; d<=daysInMonth; d++){
 
 let day=document.createElement("div")
 day.className="day"
@@ -232,7 +255,7 @@ day.innerHTML="<span>"+d+"</span>"
 
 events.forEach(e=>{
 
-if(e.date===dateStr || (e.repeat==="weekly" && new Date(dateStr).getDay()==new Date(e.date).getDay())){
+if(e.date===dateStr){
 
 let ev=document.createElement("div")
 
@@ -260,25 +283,6 @@ generateCalendar()
 
 }
 
-function addEvent(){
-
-let event={
-
-title:eventTitle.value,
-date:eventDate.value,
-time:eventTime.value,
-repeat:eventRepeat.value
-
-}
-
-events.push(event)
-
-localStorage.setItem("events",JSON.stringify(events))
-
-generateCalendar()
-
-}
-
 function checkNotifications(){
 
 if(Notification.permission!=="granted"){
@@ -299,8 +303,7 @@ if(
 
 now.getHours()===eventDate.getHours() &&
 now.getMinutes()===eventDate.getMinutes() &&
-(now.toISOString().slice(0,10)===e.date ||
-(e.repeat==="weekly" && now.getDay()===eventDate.getDay()))
+now.toISOString().slice(0,10)===e.date
 
 ){
 
@@ -319,9 +322,7 @@ body:e.title
 }
 
 loadPet()
-
 generateCalendar()
-
 checkNotifications()
 
 </script>
