@@ -37,13 +37,7 @@
 
 <h1 id="petTitle"></h1>
 
-<div class="profileBox">
-
 <img id="profilePic" onclick="openProfile()">
-
-<button id="addButton" onclick="toggleEventForm()">+</button>
-
-</div>
 
 </header>
 
@@ -62,7 +56,12 @@
 <div id="calendar"></div>
 
 
-<div id="eventCreator">
+<button id="addButton" onclick="openEventModal()">+</button>
+
+
+<div id="eventModal">
+
+<h2>Nouvel évènement</h2>
 
 <input id="eventTitle" placeholder="Titre">
 
@@ -71,11 +70,14 @@
 <input id="eventTime" type="time">
 
 <select id="eventRepeat">
+
 <option value="none">Pas de récurrence</option>
 <option value="weekly">Chaque semaine</option>
+
 </select>
 
 <button onclick="addEvent()">Ajouter</button>
+<button onclick="closeEventModal()">Annuler</button>
 
 </div>
 
@@ -93,7 +95,6 @@
 <input id="editPhoto" type="file">
 
 <button onclick="updateProfile()">Sauvegarder</button>
-
 <button onclick="closeProfile()">Fermer</button>
 
 </div>
@@ -104,7 +105,10 @@
 <script>
 
 let events = JSON.parse(localStorage.getItem("events")) || []
+
 let currentDate = new Date()
+
+
 
 function savePet(){
 
@@ -123,6 +127,7 @@ photo: reader.result
 }
 
 localStorage.setItem("pet", JSON.stringify(pet))
+
 location.reload()
 
 }
@@ -130,6 +135,8 @@ location.reload()
 if(file) reader.readAsDataURL(file)
 
 }
+
+
 
 function loadPet(){
 
@@ -151,6 +158,8 @@ profilePic.src=pet.photo
 
 }
 
+
+
 function openProfile(){
 
 let pet = JSON.parse(localStorage.getItem("pet"))
@@ -163,11 +172,15 @@ editType.value=pet.type
 
 }
 
+
+
 function closeProfile(){
 
 profileModal.style.display="none"
 
 }
+
+
 
 function updateProfile(){
 
@@ -178,25 +191,28 @@ pet.birth=editBirth.value
 pet.type=editType.value
 
 localStorage.setItem("pet", JSON.stringify(pet))
+
 location.reload()
 
 }
 
-function toggleEventForm(){
 
-let form = document.getElementById("eventCreator")
 
-if(form.style.display==="flex"){
+function openEventModal(){
 
-form.style.display="none"
-
-}else{
-
-form.style.display="flex"
+eventModal.style.display="flex"
 
 }
 
+
+
+function closeEventModal(){
+
+eventModal.style.display="none"
+
 }
+
+
 
 function addEvent(){
 
@@ -214,7 +230,14 @@ return
 
 }
 
-let event={title,date,time,repeat}
+let event={
+
+title,
+date,
+time,
+repeat
+
+}
 
 events.push(event)
 
@@ -222,9 +245,27 @@ localStorage.setItem("events",JSON.stringify(events))
 
 generateCalendar()
 
-eventCreator.style.display="none"
+closeEventModal()
 
 }
+
+
+
+function deleteEvent(index){
+
+if(confirm("Supprimer cet évènement ?")){
+
+events.splice(index,1)
+
+localStorage.setItem("events",JSON.stringify(events))
+
+generateCalendar()
+
+}
+
+}
+
+
 
 function generateCalendar(){
 
@@ -244,6 +285,8 @@ calendar.appendChild(document.createElement("div"))
 
 }
 
+
+
 for(let d=1; d<=daysInMonth; d++){
 
 let day=document.createElement("div")
@@ -253,9 +296,36 @@ let dateStr=year+"-"+String(month+1).padStart(2,"0")+"-"+String(d).padStart(2,"0
 
 day.innerHTML="<span>"+d+"</span>"
 
-events.forEach(e=>{
 
-if(e.date===dateStr){
+events.forEach((e,index)=>{
+
+let eventDate=new Date(e.date)
+
+let currentDay=new Date(dateStr)
+
+
+let show=false
+
+
+if(e.repeat==="none"){
+
+if(e.date===dateStr) show=true
+
+}
+
+
+if(e.repeat==="weekly"){
+
+if(currentDay.getDay()===eventDate.getDay() && currentDay>=eventDate){
+
+show=true
+
+}
+
+}
+
+
+if(show){
 
 let ev=document.createElement("div")
 
@@ -263,17 +333,22 @@ ev.className="event"
 
 ev.innerText=e.time+" "+e.title
 
+ev.onclick=()=>deleteEvent(index)
+
 day.appendChild(ev)
 
 }
 
 })
 
+
 calendar.appendChild(day)
 
 }
 
 }
+
+
 
 function changeMonth(n){
 
@@ -282,6 +357,8 @@ currentDate.setMonth(currentDate.getMonth()+n)
 generateCalendar()
 
 }
+
+
 
 function checkNotifications(){
 
@@ -303,7 +380,7 @@ if(
 
 now.getHours()===eventDate.getHours() &&
 now.getMinutes()===eventDate.getMinutes() &&
-now.toISOString().slice(0,10)===e.date
+now.getDay()===eventDate.getDay()
 
 ){
 
@@ -321,8 +398,12 @@ body:e.title
 
 }
 
+
+
 loadPet()
+
 generateCalendar()
+
 checkNotifications()
 
 </script>
